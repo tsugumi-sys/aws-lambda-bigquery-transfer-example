@@ -188,10 +188,10 @@ def get_env(env_key: str, default_val=None, raise_err: bool = True):
 
 
 def find_export_tables_info_files(
-    client, source_s3_path: str, export_task_name: str
+    client, source_s3_bucket_name: str, export_task_name: str
 ) -> list:
     res = client.list_objects(
-        Bucket=source_s3_path, Prefix=f"/export_tables_info_{export_task_name}"
+        Bucket=source_s3_bucket_name, Prefix=f"/export_tables_info_{export_task_name}"
     )
 
     files = []
@@ -200,7 +200,7 @@ def find_export_tables_info_files(
         if filename.endswith("json"):
             files.append(
                 {
-                    "Bucket": source_s3_path,
+                    "Bucket": source_s3_bucket_name,
                     "Key": filename,
                 }
             )
@@ -208,10 +208,10 @@ def find_export_tables_info_files(
 
 
 def download_export_tables_info(
-    client, source_s3_path: str, export_task_name: str
+    client, source_s3_bucket_name: str, export_task_name: str
 ) -> dict:
     export_tables_info_files = find_export_tables_info_files(
-        client, source_s3_path, export_task_name
+        client, source_s3_bucket_name, export_task_name
     )
     PER_TABLES_STATUS_KEY = "perTableStatus"
     export_tables_info = None
@@ -243,11 +243,11 @@ def lambda_handler(event, context):
     aws_secret_region = get_env("AWS_SECRET_REGION")
 
     # Get S3 bucket for storeing snapshots.
-    source_s3_path = get_env("SOUCE_S3_PATH")
+    source_s3_bucket_name = get_env("SOUCE_S3_BUCKET_NAME")
     export_task_name = get_env("EXPORT_TASK_NAME")
     s3_client = boto3.client("s3")
     export_tables_info = download_export_tables_info(
-        s3_client, source_s3_path, export_task_name
+        s3_client, source_s3_bucket_name, export_task_name
     )
     print(export_tables_info)
 
@@ -257,4 +257,4 @@ def lambda_handler(event, context):
     #     aws_secret_name,
     #     aws_secret_region,
     # )
-    # bq_transferer.transfer_rds_snapshot(source_s3_path, export_tables_info)
+    # bq_transferer.transfer_rds_snapshot(source_s3_bucket_name, export_tables_info)
