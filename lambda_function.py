@@ -193,6 +193,7 @@ def find_export_tables_info_files(
     res = client.list_objects(
         Bucket=source_s3_bucket_name, Prefix=f"/export_tables_info_{export_task_name}"
     )
+    logger.info(res)
 
     files = []
     for object in res["Contents"]:
