@@ -191,7 +191,7 @@ def find_export_tables_info_files(
     client, source_s3_bucket_name: str, export_task_name: str
 ) -> list:
     res = client.list_objects(
-        Bucket=source_s3_bucket_name, Prefix=f"/export_tables_info_{export_task_name}"
+        Bucket=source_s3_bucket_name, Prefix=f"{export_task_name}/export_tables_info_"
     )
     logger.info(res)
 
