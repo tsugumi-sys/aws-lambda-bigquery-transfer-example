@@ -43,22 +43,23 @@ def download_secrets_from_ASM(secret_name: str, region: str) -> dict:
     )
 
     # TODO: Return in Try for more readability?
-    secrets = None
-    try:
-        secrets = client.get_secret_value(SecretId=secret_name)
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "ResourceNotFoundException":
-            print("The requested secret " + secret_name + " was not found")
-        elif e.response["Error"]["Code"] == "InvalidRequestException":
-            print("The request was invalid due to:", e)
-        elif e.response["Error"]["Code"] == "InvalidParameterException":
-            print("The request had invalid params:", e)
-        elif e.response["Error"]["Code"] == "DecryptionFailure":
-            print(
-                "The requested secret can't be decrypted using the provided KMS key:", e
-            )
-        elif e.response["Error"]["Code"] == "InternalServiceError":
-            print("An error occurred on service side:", e)
+    secrets = client.get_secret_value(SecretId=secret_name)
+    # secrets = None
+    # try:
+    #     secrets = client.get_secret_value(SecretId=secret_name)
+    # except ClientError as e:
+    #     if e.response["Error"]["Code"] == "ResourceNotFoundException":
+    #         print("The requested secret " + secret_name + " was not found")
+    #     elif e.response["Error"]["Code"] == "InvalidRequestException":
+    #         print("The request was invalid due to:", e)
+    #     elif e.response["Error"]["Code"] == "InvalidParameterException":
+    #         print("The request had invalid params:", e)
+    #     elif e.response["Error"]["Code"] == "DecryptionFailure":
+    #         print(
+    #             "The requested secret can't be decrypted using the provided KMS key:", e
+    #         )
+    #     elif e.response["Error"]["Code"] == "InternalServiceError":
+    #         print("An error occurred on service side:", e)
     return secrets
 
 
