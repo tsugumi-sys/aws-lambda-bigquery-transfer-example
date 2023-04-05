@@ -250,8 +250,10 @@ def lambda_handler(event, context):
     export_tables_info = download_export_tables_info(
         s3_client, source_s3_bucket_name, export_task_name
     )
-    print(export_tables_info)
 
+    secrets = download_secrets_from_ASM(aws_secret_name, aws_secret_region)
+    print(secrets)
+    
     # bq_transferer = BiqQueryTransferer(
     #     gc_project_name,
     #     bigquery_dataset_id,
