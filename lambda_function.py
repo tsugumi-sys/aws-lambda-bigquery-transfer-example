@@ -6,6 +6,7 @@ import os
 import boto3
 from google.cloud import bigquery
 from google.cloud import bigquery_datatransfer as bq_transfer
+from google.cloud.exceptions import NotFound
 from google.oauth2.service_account import Credentials
 
 logger = logging.getLogger()
@@ -153,10 +154,13 @@ class BiqQueryTransferer:
         If the table exists, do nothing.
         """
         for table_name in table_names:
-            table_ref = self.bigquery_dataset.table(table_name)
-            if table_ref.exists():
-                return
-            self.bigquery_client.create_table(bigquery.Table(table_ref))
+            try:
+                self.bigquery_client.get_table(table_name)
+                print('table exists.')
+            except NotFound:
+                table_ref = self.bigquery_dataset.table(table_name)
+                self.bigquery_client.create_table(bigquery.Table(table_ref))
+                print('table', table_name, 'created')
 
     def _exported_table_names(self, export_tables_info: dict):
         return [item["target"] for item in export_tables_info["perTableStatus"]]
