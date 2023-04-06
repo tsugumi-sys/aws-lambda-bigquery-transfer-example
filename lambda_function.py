@@ -1,10 +1,9 @@
 import datetime
 import json
-import os
 import logging
+import os
 
 import boto3
-from botocore.exceptions import ClientError
 from google.cloud import bigquery
 from google.cloud import bigquery_datatransfer as bq_transfer
 from google.oauth2.service_account import Credentials
@@ -80,13 +79,13 @@ class BiqQueryTransferer:
 
         gc_credentials = build_gc_credentials(asm_secrets)
         self.bigquery_dataset_id = bigquery_dataset_id
-        self.bigquery_client = bq_transfer.DataTransferServiceClient(
+        self.bigquery_transfer_client = bq_transfer.DataTransferServiceClient(
             credentials=gc_credentials
         )
-        self.bigquery_dataset = self.bigquery_client.dataset(bigquery_dataset_id)
-        self.bigquery_transfer_client = bigquery.Client(
+        self.bigquery_client = bigquery.Client(
             project=gc_project_name, credentials=gc_credentials
         )
+        self.bigquery_dataset = self.bigquery_client.dataset(bigquery_dataset_id)
 
     def transfer_rds_snapshot(self, data_source_s3_path: str, export_tables_info: dict):
         """
@@ -237,7 +236,7 @@ def lambda_handler(event, context):
     source_s3_bucket_name = get_env("SOUCE_S3_BUCKET_NAME")
     export_task_name = get_env("EXPORT_TASK_NAME")
     s3_client = boto3.client("s3")
-    export_tables_info = download_export_tables_info(
+    download_export_tables_info(
         s3_client, source_s3_bucket_name, export_task_name
     )
     
@@ -247,5 +246,5 @@ def lambda_handler(event, context):
         aws_secret_name,
         aws_secret_region,
     )
-    bq_transferer .get_tables()
+    bq_transferer.get_tables()
     # bq_transferer.transfer_rds_snapshot(source_s3_bucket_name, export_tables_info)
