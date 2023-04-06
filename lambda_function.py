@@ -42,25 +42,7 @@ def download_secrets_from_ASM(secret_name: str, region: str) -> dict:
         region_name=region,
     )
 
-    # TODO: Return in Try for more readability?
-    secrets = client.get_secret_value(SecretId=secret_name)
-    # secrets = None
-    # try:
-    #     secrets = client.get_secret_value(SecretId=secret_name)
-    # except ClientError as e:
-    #     if e.response["Error"]["Code"] == "ResourceNotFoundException":
-    #         print("The requested secret " + secret_name + " was not found")
-    #     elif e.response["Error"]["Code"] == "InvalidRequestException":
-    #         print("The request was invalid due to:", e)
-    #     elif e.response["Error"]["Code"] == "InvalidParameterException":
-    #         print("The request had invalid params:", e)
-    #     elif e.response["Error"]["Code"] == "DecryptionFailure":
-    #         print(
-    #             "The requested secret can't be decrypted using the provided KMS key:", e
-    #         )
-    #     elif e.response["Error"]["Code"] == "InternalServiceError":
-    #         print("An error occurred on service side:", e)
-    return secrets
+    return client.get_secret_value(SecretId=secret_name)
 
 
 class BiqQueryTransferer:
@@ -180,6 +162,13 @@ class BiqQueryTransferer:
     def _exported_table_names(self, export_tables_info: dict):
         return [item["target"] for item in export_tables_info["perTableStatus"]]
 
+    def get_tables(self):
+        tables = self.bigquery_client.list_tables(self.bigquery_dataset_id)
+        print(f"Table contained in {self.bigquery_dataset_id}")
+        for t in tables:
+            print("{}.{}.{}".format(t.project, t.dataset_id, t.table_id))
+        
+
 
 def get_env(env_key: str, default_val=None, raise_err: bool = True):
     value = os.environ.get(env_key, default_val)
@@ -251,14 +240,12 @@ def lambda_handler(event, context):
     export_tables_info = download_export_tables_info(
         s3_client, source_s3_bucket_name, export_task_name
     )
-
-    secrets = download_secrets_from_ASM(aws_secret_name, aws_secret_region)
-    print(secrets)
     
-    # bq_transferer = BiqQueryTransferer(
-    #     gc_project_name,
-    #     bigquery_dataset_id,
-    #     aws_secret_name,
-    #     aws_secret_region,
-    # )
+    bq_transferer = BiqQueryTransferer(
+        gc_project_name,
+        bigquery_dataset_id,
+        aws_secret_name,
+        aws_secret_region,
+    )
+    bq_transferer .get_tables()
     # bq_transferer.transfer_rds_snapshot(source_s3_bucket_name, export_tables_info)
