@@ -153,10 +153,10 @@ class BiqQueryTransferer:
         If the table exists, do nothing.
         """
         for table_name in table_names:
-            table = self.bigquery_dataset.table(table_name, {})
-            if table.exists():
+            table_ref = self.bigquery_dataset.table(table_name)
+            if table_ref.exists():
                 return
-            table.create()
+            self.bigquery_client.create_table(bigquery.Table(table_ref))
 
     def _exported_table_names(self, export_tables_info: dict):
         return [item["target"] for item in export_tables_info["perTableStatus"]]
