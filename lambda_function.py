@@ -155,6 +155,7 @@ class BiqQueryTransferer:
         """
         for table_name in table_names:
             try:
+                print(table_name)
                 self.bigquery_client.get_table(table_name)
                 print('table exists.')
             except NotFound:
