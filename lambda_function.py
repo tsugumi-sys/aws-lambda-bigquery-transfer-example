@@ -134,7 +134,7 @@ class BiqQueryTransferer:
                 return configs
 
         table_names = self._exported_table_names(export_tables_info)
-        self._create_bigquery_tables(table_names)
+        self._create_bigquery_tables(table_names[:1])
 
         for config in self._create_transfer_config(table_names):
             transfer_req = bq_transfer.StartManualTransferRunsRequest(
@@ -236,7 +236,7 @@ def lambda_handler(event, context):
     source_s3_bucket_name = get_env("SOUCE_S3_BUCKET_NAME")
     export_task_name = get_env("EXPORT_TASK_NAME")
     s3_client = boto3.client("s3")
-    download_export_tables_info(
+    export_tables_info = download_export_tables_info(
         s3_client, source_s3_bucket_name, export_task_name
     )
     
@@ -246,5 +246,4 @@ def lambda_handler(event, context):
         aws_secret_name,
         aws_secret_region,
     )
-    bq_transferer.get_tables()
-    # bq_transferer.transfer_rds_snapshot(source_s3_bucket_name, export_tables_info)
+    bq_transferer.transfer_rds_snapshot(source_s3_bucket_name, export_tables_info)
