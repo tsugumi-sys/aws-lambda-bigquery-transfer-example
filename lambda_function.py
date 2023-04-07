@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-# import boto3
+import boto3
 from google.cloud import bigquery
 from google.cloud import bigquery_datatransfer as bq_transfer
 from google.cloud.exceptions import NotFound
@@ -293,21 +293,19 @@ def lambda_handler(event, context):
     )
 
 
-if __name__ == "__main__":
-    # bq_transferer = BiqQueryTransferer(
-    #     "ocp-stg",
-    #     "ocp-stg.rds_snapshot_export_test",
-    #     "dum",
-    #     "dum",
-    # )
-    # bq_transferer.test_create_table(
-    #     {
-    #         "perTableStatus": [
-    #             {
-    #                 "target": "ocp-stg.public.test_table",  # this is table name.
-    #             }
-    #         ],
-    #     },
-    # )
-
-
+# if __name__ == "__main__":
+# bq_transferer = BiqQueryTransferer(
+#     "ocp-stg",
+#     "ocp-stg.rds_snapshot_export_test",
+#     "dum",
+#     "dum",
+# )
+# bq_transferer.test_create_table(
+#     {
+#         "perTableStatus": [
+#             {
+#                 "target": "ocp-stg.public.test_table",  # this is table name.
+#             }
+#         ],
+#     },
+# )
