@@ -80,7 +80,7 @@ class BiqQueryTransferer:
 
         gc_credentials = build_gc_credentials(asm_secrets)
         # with open("./credentials.json") as f:
-        #     credential_dic = json.load(f)
+        #     gc_credentials = json.load(f)
         # gc_credentials = Credentials.from_service_account_info(gc_credentials)
         self.bigquery_dataset_id = bigquery_dataset_id
         self.bigquery_transfer_client = bq_transfer.DataTransferServiceClient(
@@ -118,7 +118,9 @@ class BiqQueryTransferer:
             Snapshot. This function only used in `transfer_rds_snapshot`.
             """
             configs = []
-            parent = self.bigquery_client.common_project_path(self.bigquery_dataset_id)
+            parent = self.bigquery_transfer_client.common_project_path(
+                self.bigquery_dataset_id
+            )
             for bq_tb_name, snapshot_tb_name in zip(
                 bq_table_names, snapshot_table_names
             ):
@@ -292,12 +294,13 @@ def lambda_handler(event, context):
 
 
 # if __name__ == "__main__":
-# bq_transferer = BiqQueryTransferer(
-#     "ocp-stg",
-#     "ocp-stg.rds_snapshot_export_test",
-#     "dum",
-#     "dum",
-# )
+#     dataset_id = "ocp-stg.rds_snapshot_export_test"
+#     bq_transferer = BiqQueryTransferer(
+#         "ocp-stg",
+#         "ocp-stg.rds_snapshot_export_test",
+#         "dum",
+#         "dum",
+#     )
 # bq_transferer.test_create_table(
 #     {
 #         "perTableStatus": [
