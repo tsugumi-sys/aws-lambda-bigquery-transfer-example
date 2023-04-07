@@ -48,7 +48,7 @@ def download_secrets_from_ASM(secret_name: str, region: str) -> dict:
 class BiqQueryTransferer:
     def __init__(
         self,
-        gc_project_name: str,
+        gc_project_id: str,
         bigquery_dataset_id: str,
         aws_secret_name: str,
         aws_secret_region: str,
@@ -87,7 +87,7 @@ class BiqQueryTransferer:
             credentials=gc_credentials
         )
         self.bigquery_client = bigquery.Client(
-            project=gc_project_name, credentials=gc_credentials
+            project=gc_project_id, credentials=gc_credentials
         )
         self.bigquery_dataset = self.bigquery_client.dataset(bigquery_dataset_id)
 
@@ -252,7 +252,7 @@ def lambda_handler(event, context):
         4. Check if you can create table and send it of a single table.
         5. Check if you can create and send all tables to BQ.
     """
-    gc_project_name = get_env("GC_PROJECT_NAME")
+    gc_project_id = get_env("GC_PROJECT_ID")
     bigquery_dataset_id = get_env("BIGQUERY_DATASET_ID")
 
     # Credential JSON file for authentication of google-cloud client
@@ -269,7 +269,7 @@ def lambda_handler(event, context):
     )
 
     bq_transferer = BiqQueryTransferer(
-        gc_project_name,
+        gc_project_id,
         bigquery_dataset_id,
         aws_secret_name,
         aws_secret_region,
