@@ -81,7 +81,7 @@ class BiqQueryTransferer:
         gc_credentials = build_gc_credentials(asm_secrets)
         # with open("./credentials.json") as f:
         #     credential_dic = json.load(f)
-        gc_credentials = Credentials.from_service_account_info(gc_credentials)
+        # gc_credentials = Credentials.from_service_account_info(gc_credentials)
         self.bigquery_dataset_id = bigquery_dataset_id
         self.bigquery_transfer_client = bq_transfer.DataTransferServiceClient(
             credentials=gc_credentials
