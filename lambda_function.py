@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-import boto3
+# import boto3
 from google.cloud import bigquery
 from google.cloud import bigquery_datatransfer as bq_transfer
 from google.cloud.exceptions import NotFound
@@ -178,23 +178,37 @@ class BiqQueryTransferer:
         return bq_table_names
 
     def _table_id(self, table_name: str):
-        if table_name.startswith("public."):
-            table_name = "".join(table_name.split(".")[1:])
+        """
+        Convert snapshot table name to bigquery table id.
+        e.g. {rds-db-name}.public.{table_name}
+        -> {GC-project-id}.{bigquery-dataset-id}.{table_name}
+        """
+        table_name = table_name.split(".")[-1]
         return f"{self.bigquery_dataset_id}.{table_name}"
 
     def _snapshot_table_names(self, export_tables_info: dict):
         """
         Return table names based on RDS snapshot naming conventions
-        like `public.users`.
+        like `{rds-db-name}.public.{table_name}`.
 
         Args:
             export_tables_info (dict): The meta info of exported DB tables, which is
             generated in the top directory of S3 after completing snapshot export.
 
         Returns:
-            list: The exported table names.
+            list: The exported table names in s3, which are formatted like
+            `{rds-db-name}/public.{table_name}`.
         """
-        return [item["target"] for item in export_tables_info["perTableStatus"]]
+        target_tables = [
+            item["target"] for item in export_tables_info["perTableStatus"]
+        ]
+        table_names = []
+        for target in target_tables:
+            target_name_splits = target.split(".")
+            table_names.append(
+                target_name_splits[0] + "/" + ".".join(target_name_splits[1:])
+            )
+        return table_names
 
 
 def get_env(env_key: str, default_val=None, raise_err: bool = True):
@@ -279,19 +293,21 @@ def lambda_handler(event, context):
     )
 
 
-# if __name__ == "__main__":
-#     bq_transferer = BiqQueryTransferer(
-#         "ocp-stg",
-#         "ocp-stg.rds_snapshot_export_test",
-#         "dum",
-#         "dum",
-#     )
-#     bq_transferer.test_create_table(
-#         {
-#             "perTableStatus": [
-#                 {
-#                     "target": "public.test_table",  # this is table name.
-#                 }
-#             ],
-#         },
-#     )
+if __name__ == "__main__":
+    # bq_transferer = BiqQueryTransferer(
+    #     "ocp-stg",
+    #     "ocp-stg.rds_snapshot_export_test",
+    #     "dum",
+    #     "dum",
+    # )
+    # bq_transferer.test_create_table(
+    #     {
+    #         "perTableStatus": [
+    #             {
+    #                 "target": "ocp-stg.public.test_table",  # this is table name.
+    #             }
+    #         ],
+    #     },
+    # )
+
+
