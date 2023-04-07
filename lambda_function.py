@@ -79,6 +79,9 @@ class BiqQueryTransferer:
             )
 
         gc_credentials = build_gc_credentials(asm_secrets)
+        # with open("./credentials.json") as f:
+        #     credential_dic = json.load(f)
+        gc_credentials = Credentials.from_service_account_info(gc_credentials)
         self.bigquery_dataset_id = bigquery_dataset_id
         self.bigquery_transfer_client = bq_transfer.DataTransferServiceClient(
             credentials=gc_credentials
@@ -108,22 +111,26 @@ class BiqQueryTransferer:
                 }
         """
 
-        def _create_transfer_config(table_names: str) -> list:
+        def _create_transfer_config(
+            bq_table_names: list, snapshot_table_names: list
+        ) -> list:
             """Create BigQuery Transfer Configuration for all given tables in RDS
             Snapshot. This function only used in `transfer_rds_snapshot`.
             """
             configs = []
             parent = self.bigquery_client.common_project_path(self.bigquery_dataset_id)
-            for table_name in table_names:
+            for bq_tb_name, snapshot_tb_name in zip(
+                bq_table_names, snapshot_table_names
+            ):
                 transfer_config = bq_transfer.TransferConfig(
                     destination_dataset_id=self.bigquery_dataset_id,
-                    display_name=f"test-{table_name}-transfer-to-{self.bigquery_dataset_id}",
+                    display_name=f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}",
                     data_source_id="amazon_s3",
                     schedule_options={"disable_auto_scheduling": True},
                     params={
-                        "destination_table_name_template": table_name,
+                        "destination_table_name_template": bq_tb_name,
                         "data_path": os.path.join(
-                            data_source_s3_path, f"${table_name}/*/*.parquet"
+                            data_source_s3_path, f"${snapshot_tb_name}/*/*.parquet"
                         ),
                         "file_format": "parquet",
                     },
@@ -134,10 +141,12 @@ class BiqQueryTransferer:
                 )
                 return configs
 
-        table_names = self._exported_table_names(export_tables_info)
-        self._create_bigquery_tables(table_names[:1])
+        snapshot_table_names = self._snapshot_table_names(export_tables_info)
+        bq_table_names = self._create_bigquery_tables(snapshot_table_names[:1])
 
-        for config in self._create_transfer_config(table_names):
+        for config in self._create_transfer_config(
+            bq_table_names, snapshot_table_names[:1]
+        ):
             transfer_req = bq_transfer.StartManualTransferRunsRequest(
                 parent=config.name,
                 requested_run_time=datetime.datetime.now(),
@@ -147,31 +156,45 @@ class BiqQueryTransferer:
             )
             logger.info(res)
 
-    def _create_bigquery_tables(self, table_names: str):
+    def _create_bigquery_tables(self, table_names: str) -> list:
         """
         Create BigQuery table wituout schema, because BigQuery read schema infomation
         from parquet file automatically), if the table does not exist.
         If the table exists, do nothing.
+
+        Returns:
+            list: The name of bigquery tables.
         """
+        bq_table_names = []
         for table_name in table_names:
+            table_id = self._table_id(table_name)
             try:
-                print(table_name)
-                self.bigquery_client.get_table(table_name)
-                print('table exists.')
+                self.bigquery_client.get_table(table_id)
             except NotFound:
-                table_ref = self.bigquery_dataset.table(table_name)
-                self.bigquery_client.create_table(bigquery.Table(table_ref))
-                print('table', table_name, 'created')
+                table = bigquery.Table(table_id, {})
+                self.bigquery_client.create_table(table)
+            # table_id is formatted like "project_id.dataset_id.table_name".
+            bq_table_names.append(table_id.split(".")[-1])
+        return bq_table_names
 
-    def _exported_table_names(self, export_tables_info: dict):
+    def _table_id(self, table_name: str):
+        if table_name.startswith("public."):
+            table_name = "".join(table_name.split(".")[1:])
+        return f"{self.bigquery_dataset_id}.{table_name}"
+
+    def _snapshot_table_names(self, export_tables_info: dict):
+        """
+        Return table names based on RDS snapshot naming conventions
+        like `public.users`.
+
+        Args:
+            export_tables_info (dict): The meta info of exported DB tables, which is
+            generated in the top directory of S3 after completing snapshot export.
+
+        Returns:
+            list: The exported table names.
+        """
         return [item["target"] for item in export_tables_info["perTableStatus"]]
-
-    def get_tables(self):
-        tables = self.bigquery_client.list_tables(self.bigquery_dataset_id)
-        print(f"Table contained in {self.bigquery_dataset_id}")
-        for t in tables:
-            print("{}.{}.{}".format(t.project, t.dataset_id, t.table_id))
-        
 
 
 def get_env(env_key: str, default_val=None, raise_err: bool = True):
@@ -244,11 +267,31 @@ def lambda_handler(event, context):
     export_tables_info = download_export_tables_info(
         s3_client, source_s3_bucket_name, export_task_name
     )
-    
+
     bq_transferer = BiqQueryTransferer(
         gc_project_name,
         bigquery_dataset_id,
         aws_secret_name,
         aws_secret_region,
     )
-    bq_transferer.transfer_rds_snapshot(source_s3_bucket_name, export_tables_info)
+    bq_transferer.transfer_rds_snapshot(
+        os.path.join(source_s3_bucket_name, export_task_name), export_tables_info
+    )
+
+
+# if __name__ == "__main__":
+#     bq_transferer = BiqQueryTransferer(
+#         "ocp-stg",
+#         "ocp-stg.rds_snapshot_export_test",
+#         "dum",
+#         "dum",
+#     )
+#     bq_transferer.test_create_table(
+#         {
+#             "perTableStatus": [
+#                 {
+#                     "target": "public.test_table",  # this is table name.
+#                 }
+#             ],
+#         },
+#     )
