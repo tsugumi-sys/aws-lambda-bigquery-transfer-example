@@ -144,9 +144,7 @@ class BiqQueryTransferer:
         snapshot_table_names = self._snapshot_table_names(export_tables_info)
         bq_table_names = self._create_bigquery_tables(snapshot_table_names[:1])
 
-        for config in self._create_transfer_config(
-            bq_table_names, snapshot_table_names[:1]
-        ):
+        for config in _create_transfer_config(bq_table_names, snapshot_table_names[:1]):
             transfer_req = bq_transfer.StartManualTransferRunsRequest(
                 parent=config.name,
                 requested_run_time=datetime.datetime.now(),
