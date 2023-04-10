@@ -125,26 +125,26 @@ class BiqQueryTransferer:
             for bq_tb_name, snapshot_tb_name in zip(
                 bq_table_names, snapshot_table_names
             ):
-                transfer_config = {
-                    "destination_dataset_id": self.bigquery_dataset_id,
-                    "display_name": f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}",
-                    "data_source_id": "amazon_s3",
-                    "schedule_options": {"disable_auto_scheduling": True},
-                    "params": google_json_format.ParseDict(
-                        {
-                            "params": {
-                                "destination_table_name_template": bq_tb_name,
-                                "data_path": os.path.join(
-                                    data_source_s3_path,
-                                    f"${snapshot_tb_name}/*/*.parquet",
-                                ),
-                                "file_format": "PARQUET",
-                            }
-                        },
-                        bq_transfer.types.TransferConfig()._pb,
-                    ).params,
-                }
-                transfer_config = bq_transfer.types.TransferConfig(**transfer_config)
+                transfer_config = bq_transfer.TransferConfig()
+                transfer_config.destination_dataset_id = self.bigquery_dataset_id
+                transfer_config.display_name = (
+                    f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}"
+                )
+                transfer_config.data_source_id = "amazon_s3"
+                transfer_config.schedule_options = {"disable_auto_scheduling": True}
+                transfer_config.params = google_json_format.ParseDict(
+                    {
+                        "params": {
+                            "destination_table_name_template": bq_tb_name,
+                            "data_path": os.path.join(
+                                data_source_s3_path,
+                                f"${snapshot_tb_name}/*/*.parquet",
+                            ),
+                            "file_format": "PARQUET",
+                        }
+                    },
+                    bq_transfer.types.TransferConfig()._pb,
+                ).params
                 transfer_config = self.bigquery_transfer_client.create_transfer_config(
                     parent=parent,
                     transfer_config=transfer_config,
