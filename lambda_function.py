@@ -135,7 +135,7 @@ class BiqQueryTransferer:
                             "file_format": "PARQUET",
                         }
                     },
-                    bq_transfer.types.TransferConfig(),
+                    bq_transfer.types.TransferConfig()._pb,
                 )
                 transfer_config = bq_transfer.TransferConfig(
                     destination_dataset_id=self.bigquery_dataset_id,
