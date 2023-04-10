@@ -127,12 +127,15 @@ class BiqQueryTransferer:
             ):
                 params_dict = google_json_format.ParseDict(
                     {
-                        "destination_table_name_template": bq_tb_name,
-                        "data_path": os.path.join(
-                            data_source_s3_path, f"${snapshot_tb_name}/*/*.parquet"
-                        ),
-                        "file_format": "PARQUET",
-                    }
+                        "params": {
+                            "destination_table_name_template": bq_tb_name,
+                            "data_path": os.path.join(
+                                data_source_s3_path, f"${snapshot_tb_name}/*/*.parquet"
+                            ),
+                            "file_format": "PARQUET",
+                        }
+                    },
+                    bq_transfer.types.TransferConfig(),
                 )
                 transfer_config = bq_transfer.TransferConfig(
                     destination_dataset_id=self.bigquery_dataset_id,
