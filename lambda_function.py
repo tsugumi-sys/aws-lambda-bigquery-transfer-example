@@ -5,7 +5,7 @@ import os
 
 import boto3
 from google.cloud import bigquery
-from google.cloud import bigquery_datatransfer as bq_transfer
+from google.cloud import bigquery_datatransfer_v1 as bq_transfer
 from google.cloud.exceptions import NotFound
 from google.oauth2.service_account import Credentials
 from google.protobuf import json_format as google_json_format
