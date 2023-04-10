@@ -8,6 +8,7 @@ from google.cloud import bigquery
 from google.cloud import bigquery_datatransfer as bq_transfer
 from google.cloud.exceptions import NotFound
 from google.oauth2.service_account import Credentials
+from google.protobuf import json_format as google_json_format
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -124,18 +125,21 @@ class BiqQueryTransferer:
             for bq_tb_name, snapshot_tb_name in zip(
                 bq_table_names, snapshot_table_names
             ):
-                transfer_config = bq_transfer.TransferConfig(
-                    destination_dataset_id=self.bigquery_dataset_id,
-                    display_name=f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}",
-                    data_source_id="amazon_s3",
-                    schedule_options={"disable_auto_scheduling": True},
-                    params={
+                params_dict = google_json_format.ParseDict(
+                    {
                         "destination_table_name_template": bq_tb_name,
                         "data_path": os.path.join(
                             data_source_s3_path, f"${snapshot_tb_name}/*/*.parquet"
                         ),
                         "file_format": "PARQUET",
-                    },
+                    }
+                )
+                transfer_config = bq_transfer.TransferConfig(
+                    destination_dataset_id=self.bigquery_dataset_id,
+                    display_name=f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}",
+                    data_source_id="amazon_s3",
+                    schedule_options={"disable_auto_scheduling": True},
+                    params=params_dict,
                 )
                 transfer_config = self.bigquery_transfer_client.create_transfer_config(
                     parent=parent,
