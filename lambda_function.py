@@ -144,7 +144,7 @@ class BiqQueryTransferer:
                         bq_transfer.types.TransferConfig()._pb,
                     ).params,
                 }
-                transfer_config = bq_transfer.TransferConfig(**transfer_config)
+                transfer_config = bq_transfer.types.TransferConfig(**transfer_config)
                 transfer_config = self.bigquery_transfer_client.create_transfer_config(
                     parent=parent,
                     transfer_config=transfer_config,
