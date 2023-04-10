@@ -134,7 +134,7 @@ class BiqQueryTransferer:
                         "data_path": os.path.join(
                             data_source_s3_path, f"${snapshot_tb_name}/*/*.parquet"
                         ),
-                        "file_format": "parquet",
+                        "file_format": "PARQUET",
                     },
                 )
                 transfer_config = self.bigquery_transfer_client.create_transfer_config(
@@ -295,6 +295,7 @@ def lambda_handler(event, context):
 
 # if __name__ == "__main__":
 #     dataset_id = "ocp-stg.rds_snapshot_export_test"
+#     print(os.path.join("s3://akiranodga-rds-snapshot-bucket/test", "acds"))
 #     bq_transferer = BiqQueryTransferer(
 #         "ocp-stg",
 #         "ocp-stg.rds_snapshot_export_test",
