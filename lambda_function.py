@@ -142,7 +142,7 @@ class BiqQueryTransferer:
                     display_name=f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}",
                     data_source_id="amazon_s3",
                     schedule_options={"disable_auto_scheduling": True},
-                    params=params_dict,
+                    params=params_dict.params,
                 )
                 transfer_config = self.bigquery_transfer_client.create_transfer_config(
                     parent=parent,
