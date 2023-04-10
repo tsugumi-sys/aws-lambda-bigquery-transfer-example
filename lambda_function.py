@@ -129,7 +129,7 @@ class BiqQueryTransferer:
                     "destination_dataset_id": self.bigquery_dataset_id,
                     "display_name": f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}",
                     "data_source_id": "amazon_s3",
-                    "schedule_options": {"disable_auto_scheduling": "true"},
+                    "schedule_options": {"disable_auto_scheduling": True},
                     "params": google_json_format.ParseDict(
                         {
                             "params": {
