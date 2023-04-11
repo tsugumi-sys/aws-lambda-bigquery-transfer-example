@@ -3,7 +3,8 @@ import json
 import logging
 import os
 
-import boto3
+# import boto3
+
 from google.cloud import bigquery
 from google.cloud import bigquery_datatransfer_v1 as bq_transfer
 from google.cloud.exceptions import NotFound
@@ -18,7 +19,7 @@ def build_gc_credentials(asm_secrets: dict) -> Credentials:
     """
 
     Args:
-        asm_secrets (dict): Response of `boto3.SecretsManager.Client.get_secret_value()`.
+        asm_secrets (dict): Response of `boto3.SecretsManager.Client.get_secret_value()`
             The contents are as follows.
             {
                 'ARN': 'string',
@@ -72,17 +73,18 @@ class BiqQueryTransferer:
                     ...
                 }
         """
-        asm_secrets = download_secrets_from_ASM(aws_secret_name, aws_secret_region)
-        if asm_secrets is None:
-            raise ValueError(
-                f"Download AMS secrets failed (`secret_name`={aws_secret_name}, "
-                f"`secret_region`={aws_secret_region})."
-            )
+        # asm_secrets = download_secrets_from_ASM(aws_secret_name, aws_secret_region)
+        # if asm_secrets is None:
+        #     raise ValueError(
+        #         f"Download AMS secrets failed (`secret_name`={aws_secret_name}, "
+        #         f"`secret_region`={aws_secret_region})."
+        #     )
 
-        gc_credentials = build_gc_credentials(asm_secrets)
-        # with open("./credentials.json") as f:
-        #     gc_credentials = json.load(f)
-        # gc_credentials = Credentials.from_service_account_info(gc_credentials)
+        # gc_credentials = build_gc_credentials(asm_secrets)
+        with open("./credentials.json") as f:
+            gc_credentials = json.load(f)
+        gc_credentials = Credentials.from_service_account_info(gc_credentials)
+        self.gc_project_id = gc_project_id
         self.bigquery_dataset_id = bigquery_dataset_id
         self.bigquery_transfer_client = bq_transfer.DataTransferServiceClient(
             credentials=gc_credentials
@@ -91,6 +93,18 @@ class BiqQueryTransferer:
             project=gc_project_id, credentials=gc_credentials
         )
         self.bigquery_dataset = self.bigquery_client.dataset(bigquery_dataset_id)
+
+    def _remove_remaining_transfer_configs(self, transfer_config_names: list):
+        parent = self.bigquery_transfer_client.common_project_path(self.gc_project_id)
+        request = bq_transfer.ListTransferConfigsRequest(parent=parent)
+        res = bq_transferer.bigquery_transfer_client.list_transfer_configs(
+            request=request
+        )
+        for name in transfer_config_names:
+            remaining_configs = [cfg for cfg in res if res.name == name]
+            for cfg in remaining_configs:
+                req = bq_transfer.DeleteTransferConfigRequest(name=name)
+                self.bigquery_transfer_client.delete_transfer_config(request=req)
 
     def transfer_rds_snapshot(self, data_source_s3_path: str, export_tables_info: dict):
         """
@@ -120,21 +134,26 @@ class BiqQueryTransferer:
             """
             configs = []
             parent = self.bigquery_transfer_client.common_project_path(
-                self.bigquery_dataset_id
+                self.gc_project_id
             )
             for bq_tb_name, snapshot_tb_name in zip(
                 bq_table_names, snapshot_table_names
             ):
                 transfer_config = {
-                    "destination_dataset_id": self.bigquery_dataset_id,
-                    "display_name": f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}",
+                    "name": bq_tb_name,
+                    # NOTE: self..bigquery_dataset_id is formatted like as follows:
+                    # {project_id}.{dataset_id}
+                    "destination_dataset_id": self.bigquery_dataset_id.split(".")[-1],
+                    "display_name": (
+                        f"test-{snapshot_tb_name}-transfer-to-{self.bigquery_dataset_id}"
+                    ),
                     "data_source_id": "amazon_s3",
                     "schedule_options": {"disable_auto_scheduling": True},
                     "params": {
                         "destination_table_name_template": bq_tb_name,
                         "data_path": os.path.join(
                             data_source_s3_path,
-                            f"${snapshot_tb_name}/*/*.parquet",
+                            f"{snapshot_tb_name}/*/*.parquet",
                         ),
                         "file_format": "PARQUET",
                     },
@@ -153,11 +172,13 @@ class BiqQueryTransferer:
                 transfer_config = self.bigquery_transfer_client.create_transfer_config(
                     request
                 )
-                return configs
+                configs.append(transfer_config)
+            return configs
 
         snapshot_table_names = self._snapshot_table_names(export_tables_info)
         bq_table_names = self._create_bigquery_tables(snapshot_table_names[:1])
 
+        self._remove_remaining_transfer_configs(bq_table_names)
         for config in _create_transfer_config(bq_table_names, snapshot_table_names[:1]):
             transfer_req = bq_transfer.StartManualTransferRunsRequest(
                 parent=config.name,
@@ -306,20 +327,20 @@ def lambda_handler(event, context):
 
 
 # if __name__ == "__main__":
-#     dataset_id = "ocp-stg.rds_snapshot_export_test"
-#     print(os.path.join("s3://akiranodga-rds-snapshot-bucket/test", "acds"))
 #     bq_transferer = BiqQueryTransferer(
 #         "ocp-stg",
 #         "ocp-stg.rds_snapshot_export_test",
 #         "dum",
 #         "dum",
 #     )
-# bq_transferer.test_create_table(
-#     {
-#         "perTableStatus": [
-#             {
-#                 "target": "ocp-stg.public.test_table",  # this is table name.
-#             }
-#         ],
-#     },
-# )
+
+#     bq_transferer.transfer_rds_snapshot(
+#         "s3://casdca",
+#         {
+#             "perTableStatus": [
+#                 {
+#                     "target": "ocp-stg.public.test_table",  # this is table name.
+#                 }
+#             ],
+#         },
+#     )
