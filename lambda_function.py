@@ -3,8 +3,7 @@ import json
 import logging
 import os
 
-# import boto3
-
+import boto3
 from google.cloud import bigquery
 from google.cloud import bigquery_datatransfer_v1 as bq_transfer
 from google.cloud.exceptions import NotFound
@@ -73,17 +72,17 @@ class BiqQueryTransferer:
                     ...
                 }
         """
-        # asm_secrets = download_secrets_from_ASM(aws_secret_name, aws_secret_region)
-        # if asm_secrets is None:
-        #     raise ValueError(
-        #         f"Download AMS secrets failed (`secret_name`={aws_secret_name}, "
-        #         f"`secret_region`={aws_secret_region})."
-        #     )
+        asm_secrets = download_secrets_from_ASM(aws_secret_name, aws_secret_region)
+        if asm_secrets is None:
+            raise ValueError(
+                f"Download AMS secrets failed (`secret_name`={aws_secret_name}, "
+                f"`secret_region`={aws_secret_region})."
+            )
 
-        # gc_credentials = build_gc_credentials(asm_secrets)
-        with open("./credentials.json") as f:
-            gc_credentials = json.load(f)
-        gc_credentials = Credentials.from_service_account_info(gc_credentials)
+        gc_credentials = build_gc_credentials(asm_secrets)
+        # with open("./credentials.json") as f:
+        #     gc_credentials = json.load(f)
+        # gc_credentials = Credentials.from_service_account_info(gc_credentials)
         self.gc_project_id = gc_project_id
         self.bigquery_dataset_id = bigquery_dataset_id
         self.bigquery_transfer_client = bq_transfer.DataTransferServiceClient(
@@ -97,9 +96,7 @@ class BiqQueryTransferer:
     def _remove_remaining_transfer_configs(self, transfer_config_names: list):
         parent = self.bigquery_transfer_client.common_project_path(self.gc_project_id)
         request = bq_transfer.ListTransferConfigsRequest(parent=parent)
-        res = bq_transferer.bigquery_transfer_client.list_transfer_configs(
-            request=request
-        )
+        res = self.bigquery_transfer_client.list_transfer_configs(request=request)
         for name in transfer_config_names:
             remaining_configs = [cfg for cfg in res if res.name == name]
             for cfg in remaining_configs:
