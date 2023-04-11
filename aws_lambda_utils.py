@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 
 def retrieve_snapshot_target_names(export_tables_info: dict):
@@ -31,6 +32,7 @@ def retrieve_snapshot_target_names(export_tables_info: dict):
         `{rds-db-name}/public.{table_name}`.
     """
     target_tables = [item["target"] for item in export_tables_info["perTableStatus"]]
+    target_tables = [t for t in target_tables if re.match(r".+\.public\..+", t)]
     target_names = []
     for target in target_tables:
         target_name_splits = target.split(".")
