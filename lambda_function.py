@@ -24,7 +24,10 @@ def lambda_handler(event, context):
 
     # Credential JSON file for authentication of google-cloud client
     # are saved in AWS Secret Manager.
-    aws_secret_name = get_env("AWS_SECRET_NAME")
+    aws_secret_name_for_gc_service_account = get_env(
+        "AWS_SECRET_NAME_FOR_GC_SERVICE_ACCOUNT"
+    )
+    aws_secret_name_for_iam_user = get_env("AWS_SECRET_NAME_FOR_IAM_USER")
     aws_secret_region = get_env("AWS_SECRET_REGION")
 
     # Get S3 bucket for storeing snapshots.
@@ -38,7 +41,8 @@ def lambda_handler(event, context):
     bq_transferer = BiqQueryTransferer(
         gc_project_id,
         bigquery_dataset_id,
-        aws_secret_name,
+        aws_secret_name_for_gc_service_account,
+        aws_secret_name_for_iam_user,
         aws_secret_region,
     )
     bq_transferer.transfer_rds_snapshot(
