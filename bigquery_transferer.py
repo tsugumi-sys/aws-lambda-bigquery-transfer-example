@@ -57,9 +57,9 @@ class BiqQueryTransferer:
             asm_secrets = download_secrets_from_ASM(
                 aws_secret_name_for_iam_user, aws_secret_region
             )
-            print(asm_secrets)
-            self.ACCESS_KEY_ID = asm_secrets["access_key_id"]
-            self.SECRET_ACCESS_KEY = asm_secrets["secret_access_key"]
+            user_credentials = json.loads(asm_secrets["SecretString"])
+            self.ACCESS_KEY_ID = user_credentials["access_key_id"]
+            self.SECRET_ACCESS_KEY = user_credentials["secret_access_key"]
             # Download secrets of GC service account.
             asm_secrets = download_secrets_from_ASM(
                 aws_secret_name_for_gc_service_account, aws_secret_region
