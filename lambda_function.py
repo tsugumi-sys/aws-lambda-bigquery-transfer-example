@@ -139,12 +139,19 @@ class BiqQueryTransferer:
                         "file_format": "PARQUET",
                     },
                 }
+                # See: https://shorturl.at/qxzCD
+                # This is shortened url of google api docs of python bigquery transfer
+                # api. This document is hard to find so comment here so that you can
+                # save your time :)
                 transfer_config = google_json_format.ParseDict(
                     transfer_config, bq_transfer.types.TransferConfig()._pb
                 )
-                transfer_config = self.bigquery_transfer_client.create_transfer_config(
+                request = bq_transfer.CreateTransferConfigRequest(
                     parent=parent,
                     transfer_config=transfer_config,
+                )
+                transfer_config = self.bigquery_transfer_client.create_transfer_config(
+                    request
                 )
                 return configs
 
