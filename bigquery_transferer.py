@@ -100,12 +100,12 @@ class BiqQueryTransferer:
         """
         snapshot_target_names = retrieve_snapshot_target_names(export_tables_info)
         bq_table_names = create_bigquery_tables(
-            self.bigquery_client, self.bigquery_dataset_id, snapshot_target_names[:1]
+            self.bigquery_client, self.bigquery_dataset_id, snapshot_target_names
         )
 
         self._remove_remaining_transfer_configs(bq_table_names)
         for config in self._create_transfer_config_for_s3(
-            bq_table_names, snapshot_target_names[:1], data_source_s3_path
+            bq_table_names, snapshot_target_names, data_source_s3_path
         ):
             transfer_req = bq_transfer.StartManualTransferRunsRequest(
                 parent=config.name,
